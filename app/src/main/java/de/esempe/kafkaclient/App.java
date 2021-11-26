@@ -6,47 +6,30 @@ package de.esempe.kafkaclient;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Properties;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.producer.Callback;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
 
-public class App
-{
-	public static void main(String[] args) throws IOException
+public class App {
+	public static void main(String[] args) throws IOException, InterruptedException, ExecutionException 
 	{
-		System.out.println("Hello Kafka 3.0.0 world");
-		describeTopics("localhost:9092", "demo");
+		System.out.println("Hello Kafka 3.0.0 world!");
+		
+		// "Liste" aller Bootstrap-Server <Hostname>:<Ports> z.B "R9118:9092;R9118:9093;R9118:9094"
+		var bootstrapServer = "[::1]:9092";
+		var admin = new Admin(bootstrapServer);
+		admin.describeTopics();
+		
+		var producer = new Producer(bootstrapServer);
+		producer.produceMsg("demo", "4711", "Eva Mustermann");
+		producer.produceMsg("demo", "4812", "Anton Mustermann");
+						
+		System.out.println("Bye!");
 
-	}
-
-	public static Properties getProperties(String brokers)
-	{
-		var properties = new Properties();
-		properties.setProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokers);
-
-		// Set how to serialize key/value pairs
-		properties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-		properties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-
-		return properties;
-	}
-
-	public static void describeTopics(String brokers, String topicName) throws IOException
-	{
-		// Set properties used to configure admin client
-		var properties = getProperties(brokers);
-
-		try (final var adminClient = KafkaAdminClient.create(properties))
-		{
-			// Make async call to describe the topic.
-			final var describeTopicsResult = adminClient.describeTopics(Collections.singleton(topicName));
-
-			var description = describeTopicsResult.values().get(topicName).get();
-			System.out.print(description.toString());
-		} catch (Exception e)
-		{
-			System.out.print("Describe denied\n");
-			System.out.print(e.getMessage());
-		}
 	}
 }
